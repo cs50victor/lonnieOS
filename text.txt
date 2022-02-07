@@ -1,0 +1,6 @@
+--version
+--version
+--version
+showdate
+help
+--history
