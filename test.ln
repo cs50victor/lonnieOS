@@ -1,0 +1,20 @@
+emoji 🧨
+new-pcb --id=0 --memory=200
+new-pcb --id=1 --memory=2
+new-pcb --id=2 --memory=3
+new-pcb --id=3 --memory=4
+new-pcb --id=4 --memory=5
+new-pcb --id=5 --memory=5
+new-pcb --id=6 --memory=5
+delete-pcb --id=0
+block-pcb --id=1
+unblock-pcb --id=1
+unblock-pcb --id=6
+show-pcb --id=2
+generate-pcbs --num=500
+run-cpu
+ready-q
+blocked-q
+all-pcbs
+new-pcb --id=0 --memory=2000000
+exit -y

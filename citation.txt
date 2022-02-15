@@ -1,6 +1,6 @@
-|        Problem        |              website         |
-| :------------------:  | :--------------------------: |
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+|                    Problem                            |              website         |
+| :--------------------------------------------------:  | :--------------------------: |
+
 | wanted to add system information to welcome message   | https://stackoverflow.com/questions/3103178/how-to-get-the-system-info-with-python 
 | get current date in python                            | https://www.programiz.com/python-programming/datetime/current-datetime 
 | importance of using __name__ == "__main__"            | https://stackoverflow.com/questions/419163/what-does-if-name-main-do
@@ -8,6 +8,10 @@
 | clear the console                                     | https://www.geeksforgeeks.org/clear-screen-python/
 | get the size of the console                           | https://www.geeksforgeeks.org/python-os-get_terminal_size-method/#:~:text=get_terminal_size()%20method%20in%20Python,the%20terminal%20window%20in%20characters
 | divide a string in even parts                         | https://stackoverflow.com/questions/13673060/split-string-into-strings-by-length
+| check if variable is a string                         | https://stackoverflow.com/questions/4843173/how-to-check-if-type-of-a-variable-is-string
+| measuring time                                        | https://stackoverflow.com/questions/7370801/how-to-measure-elapsed-time-in-python
+| colored print messages                                | https://stackoverflow.com/questions/287871/how-to-print-colored-text-to-the-terminal
+
 
 
 
