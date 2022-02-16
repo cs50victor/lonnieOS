@@ -317,7 +317,6 @@ def execute():
                 currStatus["ioQ"].append(["h", t])
 
         decision = random.randint(0,3)
-        blockedTime = random.randint(0, processingTime)
 
         if decision == 0:
             deletePCB(f"--id={pid}")
@@ -326,10 +325,10 @@ def execute():
             if decision == 1:
                 currStatus["readyQ"].append(pid)
             elif decision == 2:
-                currStatus["blockedQ"].append([pid, "u", blockedTime])
+                currStatus["blockedQ"].append([pid, "u", processingTime])
                 currStatus["processes"][pid] = [process, "blockedQ"]
             elif decision == 3:
-                currStatus["blockedQ"].append([pid, "h", blockedTime])
+                currStatus["blockedQ"].append([pid, "h", processingTime])
                 currStatus["processes"][pid] = [process, "blockedQ"]
 
         updateBlockedQ()
