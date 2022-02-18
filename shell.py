@@ -42,6 +42,7 @@ def welcomeMsg():
 def runShell():
     currStatus["session"] = True
     clearConsole()
+    os.system("python -m unittest discover -s tests -t tests")
     loadMemory()
     welcomeMsg()
 
@@ -52,5 +53,4 @@ def runShell():
 
 # only execute shell when this file is being run directly
 if __name__ == "__main__":
-    subprocess.run("cd tests ")
     runShell()

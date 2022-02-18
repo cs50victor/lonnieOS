@@ -68,7 +68,7 @@ def displayMsg(msg):
 def getArg(input, arg):
     input = input.split(" ")
     # str in float
-    if any(arg in string for string in input):
+    if any(string.startswith(arg) for string in input):
         return [x for x in input if arg in x][0].split("=")[1]
     else:
         return None

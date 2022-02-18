@@ -5,14 +5,15 @@ from utils import currStatus
 
 class TestPcb(unittest.TestCase):
 
-    currMemory = currStatus["memory"]
+
     @classmethod
     def setUpClass(cls):
+        cls.currMemory = currStatus["memory"]
         currStatus["memory"] = 5000
 
     @classmethod
     def tearDownClass(cls):
-        currStatus["memory"] = currMemory
+        currStatus["memory"] = cls.currMemory
 
     def setUp(self):
         self.p1 = PCB(1, 500)
@@ -23,16 +24,16 @@ class TestPcb(unittest.TestCase):
         self.assertEqual(self.p2.getPid(), 2)
 
         with self.assertRaises(AttributeError):
-            self.p1.__pid = 10
-            self.p2.__pid = 10
+            print(self.p1.__pid)
+            x = self.p2.__pid
     
     def test_memory(self):
         self.assertEqual(self.p1.getMemory(), 500)
         self.assertEqual(self.p2.getMemory(), 230)
 
         with self.assertRaises(AttributeError):
-            self.p1.__memory = 20
-            self.p2.__memory = 45
+            y =  self.p1.__memory
+            print(self.p2.__memory)
 
     def test_wt(self):
         with self.assertRaises(ValueError):
