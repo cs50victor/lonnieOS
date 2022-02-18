@@ -80,8 +80,6 @@ def handleScripts(input: str)  -> None:
         for c in commandsToDo:
             c = c.strip().lower()
             handleCmds(c)
-    except IndexError:
-        print(f"\nPlease privide a file name!\n{commandHelp}\n")
     except IOError:
         print(f"\n{txtColor['yellow']}can't open file: {fileName}{txtColor['reset']}\n")
     except Exception as err:
@@ -317,34 +315,34 @@ def updateBlockedQ() -> None:
     )
     spaces, numOfSpaces = " ", 3
     with open("cpu-log.txt", "w+") as cpuLogfile:
-        cpuLogfile.write(f"{spaces*numOfSpaces}- GOING THROUGH BLOCKED QUEUE TO SEE IF THE EVENT QUEUE SATISFIES ANY OF THE WAITING PROCESSES.")
+        cpuLogfile.write(f"{spaces*numOfSpaces}- GOING THROUGH BLOCKED QUEUE TO SEE IF THE EVENT QUEUE SATISFIES ANY OF THE WAITING PROCESSES.\n")
         while bNum < end:
             b = currStatus["blockedQ"][bNum]
             if not isinstance(b, list):
                 break
             pid = b[0]
             process = currStatus["processes"][pid][0]
-            cpuLogfile.write(f"{spaces*numOfSpaces+1}- Blocked process [pid: {process.getPid()}, entered the blocked at : {process.getBt()}]")
+            cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Blocked process [pid: {process.getPid()}, entered the blocked at : {process.getBt()}]\n")
 
             
             for e in currStatus["ioQ"]:
                 bt = process.getBt()
                 if e[0] == b[1] and e[1] > bt:
-                    cpuLogfile.write(f"{spaces*numOfSpaces+2}- Found event [type: {e[0]}, timestamp:{e[1]}] to satisfy blocked process request [pid: {process.getPid()}, entered the blocked at : {process.getBt()}]")
+                    cpuLogfile.write(f"{spaces*(numOfSpaces+2)}- Found event [type: {e[0]}, timestamp:{e[1]}] to satisfy blocked process request [pid: {process.getPid()}, entered the blocked at : {process.getBt()}]\n")
                     t = e[1] - bt
                     process.setIot(t)
-                    cpuLogfile.write(f"{spaces*numOfSpaces+3}- Updated the I/O usage time with how long it took the process to get the appropriate I/O - {t}.")
+                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Updated the I/O usage time with how long it took the process to get the appropriate I/O - {t}.\n")
                     process.setBt(0)
-                    cpuLogfile.write(f"{spaces*numOfSpaces+3}- Set process blocked time to 0.")
+                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Set process blocked time to 0.\n")
                     process.addWt(t)
-                    cpuLogfile.write(f"{spaces*numOfSpaces+3}- Updated process waiting value by {t}.")
+                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Updated process waiting value by {t}.\n")
                     currStatus["ioQ"].remove(e)
-                    cpuLogfile.write(f"{spaces*numOfSpaces+3}- Remove I/O event from I/O queue .")
+                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Remove I/O event from I/O queue .\n")
                     currStatus["readyQ"].append(pid)
-                    cpuLogfile.write(f"{spaces*numOfSpaces+3}- Added process to ready queue.")
+                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Added process to ready queue.\n")
                     currStatus["processes"][pid] = [process, "readyQ"]
                     currStatus["blockedQ"].remove(b)
-                    cpuLogfile.write(f"{spaces*numOfSpaces+3}- Removed process from blocked queue.")
+                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Removed process from blocked queue.\n")
                     end -= 1
                     break
             bNum += 1
@@ -354,65 +352,66 @@ def execute() -> None:
 
     start, end = 0, len(currStatus["readyQ"])
     spaces, numOfSpaces = " ", 0
-    with open("cpu-log.txt", "w") as cpuLogfile:
-        cpuLogfile.write(f"{spaces*numOfSpaces}CPU SIMULATION.")
-        while len(currStatus["readyQ"]) > start:
+    with open("cpu-log.txt", "w+") as cpuLogfile:
+        cpuLogfile.write(f"{spaces*numOfSpaces}CPU SIMULATION.\n")
+        while start < end:
             pid = currStatus["readyQ"][start]
             assert len(currStatus["cpu"]) < 2, "CPU can only hold one PCB."
 
             process = currStatus["processes"][pid][0]
             currStatus["cpu"].append(process)
-            cpuLogfile.write(f"{spaces*numOfSpaces+1}Process [pid: {process.getPid()}] entered the CPU.")
+            cpuLogfile.write(f"{spaces*(numOfSpaces+1)}Process [pid: {process.getPid()}] entered the CPU.\n")
 
             processingTime = random.randint(0, 10000)
             process.addCpuT(processingTime)
-            cpuLogfile.write(f"{spaces*numOfSpaces+1}- Process time generated {processingTime}(s).")
-            cpuLogfile.write(f"{spaces*numOfSpaces+1}- Process CPU Usage Term increased by {processingTime}.")
+            cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Process time generated {processingTime}(s).\n")
+            cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Process CPU Usage Term increased by {processingTime}.\n")
 
             for p in currStatus["processes"].values():
                 p = p[0]
                 if pid != p.getPid():
                     p.addWt(processingTime)
-            cpuLogfile.write(f"{spaces*numOfSpaces+1}- Updated the Waiting Term in other processes by {processingTime}.")
+            cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Updated the Waiting Term in other processes by {processingTime}.\n")
 
             for t in range(0, processingTime, 10):
                 r = random.randint(0, 10)
-                cpuLogfile.write(f"{spaces*numOfSpaces+2}- Generated random number between 0 and 10 for ten time cycle- {r}.")
+                cpuLogfile.write(f"{spaces*(numOfSpaces+2)}- Generated random number between 0 and 10 for ten time cycle- {r}.\n")
                 if r == 4:
                     currStatus["ioQ"].append(["u", t])
-                    cpuLogfile.write(f"{spaces*numOfSpaces+3}- Added a user input I/O event to the event queue with a timecycle stamp of {t}.")
+                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Added a user input I/O event to the event queue with a timecycle stamp of {t}.\n")
                 elif r == 9:
                     currStatus["ioQ"].append(["h", t])
-                    cpuLogfile.write(f"{spaces*numOfSpaces+3}- Added a hard drive I/O event to the event queue with a timecycle stamp of {t}.")
+                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Added a hard drive I/O event to the event queue with a timecycle stamp of {t}.\n")
 
             decision = random.randint(0, 3)
-            cpuLogfile.write(f"{spaces*numOfSpaces+1}- Generated random number between 0 and 3 to determine what happens with the process - {decision}.")
+            cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Generated random number between 0 and 3 to determine what happens with the process - {decision}.\n")
 
             if decision == 0:
                 deletePCB(f"--id={pid}")
-                cpuLogfile.write(f"{spaces*numOfSpaces+2}- Process got terminated and removed from the system.")
+                cpuLogfile.write(f"{spaces*(numOfSpaces+2)}- Process got terminated and removed from the system.\n")
             else:
                 currStatus["readyQ"].pop(0)
                 if decision == 1:
                     currStatus["readyQ"].append(pid)
-                    cpuLogfile.write(f"{spaces*numOfSpaces+2}- Process returned to the ready queue to wait its turn.")
+                    cpuLogfile.write(f"{spaces*(numOfSpaces+2)}- Process returned to the ready queue to wait its turn.\n")
                 elif decision == 2:
                     process.setBt(processingTime)
-                    currStatus["blockedQ"].append([pid, "u"])
+                    currStatus["blockedQ"].append([pid, "u",processingTime])
                     currStatus["processes"][pid] = [process, "blockedQ"]
-                    cpuLogfile.write(f"{spaces*numOfSpaces+2}- Process required an I/O event and went into the blocked queue wanting an user I/O request.")
+                    cpuLogfile.write(f"{spaces*(numOfSpaces+2)}- Process required an I/O event and went into the blocked queue wanting an user I/O request.\n")
                 elif decision == 3:
                     process.setBt(processingTime)
-                    currStatus["blockedQ"].append([pid, "h"])
+                    currStatus["blockedQ"].append([pid, "h",processingTime])
                     currStatus["processes"][pid] = [process, "blockedQ"]
-                    cpuLogfile.write(f"{spaces*numOfSpaces+2}- Process required an I/O event and went into the blocked queue wanting a hard drive I/O request.")
+                    cpuLogfile.write(f"{spaces*(numOfSpaces+2)}- Process required an I/O event and went into the blocked queue wanting a hard drive I/O request.\n")
 
             updateBlockedQ()
             currStatus["cpu"].pop(0)
-        cpuLogfile.write(f"{spaces*numOfSpaces}CPU SIMULATION FINISHED.")
-        cpuLogfile.write(f"{spaces*numOfSpaces}Total Number of processes in ready queue - {len(currStatus['readyQ'])}.")
-        cpuLogfile.write(f"{spaces*numOfSpaces}Total Number of processes in blocked queue - {len(currStatus['blockedQ'])}.")
-        cpuLogfile.write(f"{spaces*numOfSpaces}Total Number of processes in the system - {len(currStatus['processes'])}.")
+            end = len(currStatus["readyQ"])
+        cpuLogfile.write(f"{spaces*numOfSpaces}CPU SIMULATION FINISHED.\n")
+        cpuLogfile.write(f"{spaces*numOfSpaces}Total Number of processes in ready queue - {len(currStatus['readyQ'])}.\n")
+        cpuLogfile.write(f"{spaces*numOfSpaces}Total Number of processes in blocked queue - {len(currStatus['blockedQ'])}.\n")
+        cpuLogfile.write(f"{spaces*numOfSpaces}Total Number of processes in the system - {len(currStatus['processes'])}.\n")
         
 
 

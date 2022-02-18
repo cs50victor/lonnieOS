@@ -14,8 +14,8 @@ unblock-pcb --id=6
 show-pcb --id=2
 generate-pcbs --num=100
 new-pcb --id=0 --memory=20
-all-pcbs
 run-cpu
 ready-q
 blocked-q
+all-pcbs
 quit -y
