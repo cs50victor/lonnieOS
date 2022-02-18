@@ -1,13 +1,15 @@
 from os import system as osSystem, name as osName, get_terminal_size as terminalSize
+import subprocess
 
+shellVersion = "1.0.0"
 shellName = "lonnie"
 shellShortFm = "ln"
-successEmoji = "🎉"
+successEmoji = "✅" # 🎉
 errorEmoji = "❗️"
-commandHelp = "Run COMMAND --help for more information on a command."
+commandHelp = "Run [COMMAND --help] for more information on a command."
 
 currStatus = {
-    "isRunning": False,
+    "session": False,
     "emoji": "💫",
     "memory": 2228,
     "cmdHistory": [],
@@ -29,24 +31,18 @@ txtColor = {
     "bold": "\033[1m",
     "underline": "\033[4m",
 }
-
+def isFloat(n):
+    try:
+        float(n)
+        return True
+    except ValueError:
+        return False
 
 def clearConsole():
-    _ = osSystem("cls") if osName == "nt" else osSystem("clear")
-
-
-def getArg(input, arg):
-    input = input.split(" ")
-
-    if any(arg in string for string in input):
-        return [x for x in input if arg in x][0].split("=")[1]
-    else:
-        return None
-
+    _ = osSystem("cls" if osName == "nt" else "clear")
 
 def displayMsg(msg):
     w, h = terminalSize()
-    shellArea = w * h
 
     lines = []
     breaks = msg.split("\n")
@@ -58,16 +54,24 @@ def displayMsg(msg):
     margin = 2
     numOfLines = len(lines)
     if numOfLines < h - margin:
+        clr = "\n" * h
         for l in lines:
             print(l)
     else:
         for l in lines[: h - margin]:
             print(l)
         _ = input(
-            f"{txtColor['bold']}------- press any key to continue -------:{txtColor['reset']} "
+            f"{txtColor['bold']}------- press ENTER to continue -------:{txtColor['reset']} "
         )
         displayMsg("\n".join(lines[h - margin :]))
 
+def getArg(input, arg):
+    input = input.split(" ")
+    # str in float
+    if any(arg in string for string in input):
+        return [x for x in input if arg in x][0].split("=")[1]
+    else:
+        return None
 
 def getInput():
     return input(f"{currStatus['emoji']}: ").strip().lower()

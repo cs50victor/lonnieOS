@@ -11,7 +11,11 @@
 | check if variable is a string                         | https://stackoverflow.com/questions/4843173/how-to-check-if-type-of-a-variable-is-string
 | measuring time                                        | https://stackoverflow.com/questions/7370801/how-to-measure-elapsed-time-in-python
 | colored print messages                                | https://stackoverflow.com/questions/287871/how-to-print-colored-text-to-the-terminal
-
+| left adjust string                                    | https://www.w3schools.com/python/ref_string_ljust.asp
+| python setters and getters                            | https://www.geeksforgeeks.org/getter-and-setter-in-python/
+| python private class variables                        | https://www.tutorialsteacher.com/python/public-private-protected-modifiers
+| writing tests                                         | https://realpython.com/python-testing/
+| writing tests 2                                       | https://github.com/CoreyMSchafer/code_snippets/blob/master/Python-Unit-Testing/test_employee.py
 
 
 
