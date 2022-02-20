@@ -12,10 +12,10 @@ block-pcb --id=1
 unblock-pcb --id=1
 unblock-pcb --id=6
 show-pcb --id=2
-generate-pcbs --num=100
+generate-pcbs --num=100000
 new-pcb --id=0 --memory=20
 run-cpu
-ready-q
 blocked-q
-all-pcbs
+ready-q
+
 quit -y

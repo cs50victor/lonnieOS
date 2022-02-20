@@ -1,4 +1,4 @@
-import os, platform, random
+import os, platform, random, time
 from datetime import datetime
 from classes.pcb import PCB
 from utils import *
@@ -181,9 +181,7 @@ def deletePCB(input: str)  -> None:
         currStatus[queueName].remove(pid)
         del currStatus["processes"][pid]
         currStatus["memory"] += process.getMemory()
-        print(
-            f"{successEmoji} Successfully deleted PCB with Pid={pid}| Queue: {queueName} | CUT: {process.getCpuT()} cycles | I/O-T: {process.getIot()} cycles | WT: {process.getWt()} cycles | Memory: {process.getMemory()} MB\n"
-        )
+        print(f"{successEmoji} Successfully deleted PCB with Pid={pid}| Queue: {queueName} | CUT: {process.getCpuT()} cycles | I/O-T: {process.getIot()} cycles | WT: {process.getWt()} cycles | Memory: {process.getMemory()} MB\n")
         process.delete()
 
 
@@ -327,6 +325,7 @@ def updateBlockedQ() -> None:
 
 
 def execute() -> None:
+    start_time = time.time()
 
     start, end = 0, len(currStatus["readyQ"])
     spaces, numOfSpaces = " ", 0
@@ -386,12 +385,14 @@ def execute() -> None:
             updateBlockedQ()
             currStatus["cpu"].pop(0)
             end = len(currStatus["readyQ"])
+            break
+        end_time = time.time()-start_time
         cpuLogfile.write(f"{spaces*numOfSpaces}CPU SIMULATION FINISHED.\n")
         cpuLogfile.write(f"{spaces*numOfSpaces}Total Number of processes in ready queue - {len(currStatus['readyQ'])}.\n")
         cpuLogfile.write(f"{spaces*numOfSpaces}Total Number of processes in blocked queue - {len(currStatus['blockedQ'])}.\n")
         cpuLogfile.write(f"{spaces*numOfSpaces}Total Number of processes in the system - {len(currStatus['processes'])}.\n")
-        
-
+        cpuLogfile.write(f"{spaces*numOfSpaces}Total time taken for CPU simulation - {end_time} seconds.\n")
+        print(f"--- cpu simulation execution time : {end_time} seconds ---")        
 
 def handleCmds(input: str):
     time = datetime.now().strftime("%I:%M:%S %p")

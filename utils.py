@@ -43,7 +43,7 @@ def getRawArg(x):
 def clearConsole():
     _ = osSystem("cls" if osName == "nt" else "clear")
 
-def displayMsg(msg):
+def displayMsg(msg:str):
     w, h = terminalSize()
 
     lines = []
@@ -67,7 +67,7 @@ def displayMsg(msg):
         )
         displayMsg("\n".join(lines[h - margin :]))
 
-def getArg(input, arg, argType):
+def getArg(input:str, arg:str, argType:str):
     argTypes = [float, str, int]
     if argType not in argTypes:
         raise ValueError("argType must be float, int or str")
