@@ -75,7 +75,7 @@ def handleScripts(input: str)  -> None:
     commandsToDo = []
     try:
         fileName = input.split(" ")[1].strip()
-        with open(fileName) as f:
+        with open(fileName, encoding="utf-8") as f:
             commandsToDo = f.readlines()
         for c in commandsToDo:
             c = c.strip().lower()
@@ -147,26 +147,21 @@ def blockedPCBs() -> None:
 
 
 def newPCB(input: str)  -> None:
-    pid, memory = getArg(input, "--id"), getArg(input, "--memory")
+    pid, memory = getArg(input, "--id",int), getArg(input, "--memory",int)
 
     if not pid:
-        print(f"{errorEmoji}Error creating PCB, no id provided.\n{commandHelp}\n")
-    elif not pid.isdigit():
-        print(f"{errorEmoji}Error creating PCB, process id must be an integer.\n")
-    elif int(pid) in currStatus["processes"]:
+        print(f"{errorEmoji}Error creating PCB, no id provided or id is not integer.\n{commandHelp}\n")
+    elif pid in currStatus["processes"]:
         print(
             f"{errorEmoji}Error creating PCB, process with id={pid} already exists.\n"
         )
     elif not memory:
-        print(f"{errorEmoji}Error creating PCB, no memory provided.\n{commandHelp}\n")
-    elif not memory.isdigit():
-        print(f"{errorEmoji}Error creating PCB, process memory must be an integer.\n")
-    elif int(memory) > currStatus["memory"]:
+        print(f"{errorEmoji}Error creating PCB, no memory provided or memory is not an integer.\n{commandHelp}\n")
+    elif memory > currStatus["memory"]:
         print(
             f"{errorEmoji}Error creating PCB [id:{pid}, memory:{memory}], not enough memory. Available Memory: {currStatus['memory']} MB\n"
         )
     else:
-        pid, memory = int(pid), int(memory)
         process = PCB(pid, memory)
         currStatus["memory"] -= memory
         currStatus["readyQ"].append(pid)
@@ -175,16 +170,13 @@ def newPCB(input: str)  -> None:
 
 
 def deletePCB(input: str)  -> None:
-    pid = getArg(input, "--id")
+    pid = getArg(input, "--id", int)
 
     if not pid:
-        print(f"{errorEmoji}Error deleting PCB, no id provided.\n{commandHelp}\n")
-    elif not pid.isdigit():
-        print(f"{errorEmoji}Error deleting PCB, process id must be an integer.\n")
-    elif int(pid) not in currStatus["processes"]:
+        print(f"{errorEmoji}Error deleting PCB, no id provided or id is not an integer.\n{commandHelp}\n")
+    elif pid not in currStatus["processes"]:
         print(f"{errorEmoji}Error deleting PCB, process with id={pid} doesn't exist.\n")
     else:
-        pid = int(pid)
         process, queueName = currStatus["processes"][pid]
         currStatus[queueName].remove(pid)
         del currStatus["processes"][pid]
@@ -196,20 +188,17 @@ def deletePCB(input: str)  -> None:
 
 
 def blockPCB(input: str) -> None:
-    pid = getArg(input, "--id")
+    pid = getArg(input, "--id", int)
 
     if not pid:
-        print(f"{errorEmoji}Error blocking PCB, no id provided.\n{commandHelp}\n")
-    elif not pid.isdigit():
-        print(f"{errorEmoji}Error blocking PCB, process id must be an integer.\n")
-    elif int(pid) not in currStatus["processes"]:
+        print(f"{errorEmoji}Error blocking PCB, no id provided or id is not an integer.\n{commandHelp}\n")
+    elif pid not in currStatus["processes"]:
         print(f"{errorEmoji}Error blocking PCB, process with id={pid} doesn't exist.\n")
-    elif int(pid) in currStatus["blockedQ"]:
+    elif pid in currStatus["blockedQ"]:
         print(
             f"{errorEmoji}Error unblocking PCB, process with id={pid} is already blocked.\n"
         )
     else:
-        pid = int(pid)
         process, queueName = currStatus["processes"][pid]
         currStatus[queueName].remove(pid)
         currStatus["blockedQ"].append(pid)
@@ -221,22 +210,19 @@ def blockPCB(input: str) -> None:
 
 
 def unblockPCB(input: str) -> None:
-    pid = getArg(input, "--id")
+    pid = getArg(input, "--id", int)
 
     if not pid:
-        print(f"{errorEmoji}Error unblocking PCB, no id provided.\n{commandHelp}\n")
-    elif not pid.isdigit():
-        print(f"{errorEmoji}Error unblocking PCB, process id must be an integer.\n")
-    elif int(pid) not in currStatus["processes"]:
+        print(f"{errorEmoji}Error unblocking PCB, no id provided or id is not an integer.\n{commandHelp}\n")
+    elif pid not in currStatus["processes"]:
         print(
             f"{errorEmoji}Error unblocking PCB, process with id={pid} doesn't exist.\n"
         )
-    elif int(pid) in currStatus["readyQ"]:
+    elif pid in currStatus["readyQ"]:
         print(
             f"{errorEmoji}Error unblocking PCB, process with id={pid} is already unblocked.\n"
         )
     else:
-        pid = int(pid)
         process, queueName = currStatus["processes"][pid]
 
         currStatus[queueName].remove(pid)
@@ -246,18 +232,15 @@ def unblockPCB(input: str) -> None:
 
 
 def showPCB(input: str) -> None:
-    pid = getArg(input, "--id")
+    pid = getArg(input, "--id", int)
 
     if not pid:
-        print(f"{errorEmoji}Error displaying PCB, no id provided.\n{commandHelp}\n")
-    elif not pid.isdigit():
-        print(f"{errorEmoji}Error displaying PCB, process id must be an integer.\n")
-    elif int(pid) not in currStatus["processes"]:
+        print(f"{errorEmoji}Error displaying PCB, no id provided is not an integer.\n{commandHelp}\n")
+    elif pid not in currStatus["processes"]:
         print(
             f"{errorEmoji}Error displaying PCB, process with id={pid} doesn't exist.\n"
         )
     else:
-        pid = int(pid)
         process, queueName = currStatus["processes"][pid]
         print(
             f"\n PID: {pid} | Queue: {queueName} | CUT: {process.getCpuT()} cycles | I/O-T: {process.getIot()} cycles | WT: {process.getWt()} cycles | Memory: {process.getMemory()} MB"
@@ -265,18 +248,13 @@ def showPCB(input: str) -> None:
 
 
 def randomPCBs(input: str) -> None:
-    num = getArg(input, "--num")
+    num = getArg(input, "--num", int)
 
     if not num:
         print(
-            f"{errorEmoji}Error generating PCBs, no number provided.\n{commandHelp}\n"
-        )
-    elif not num.isdigit():
-        print(
-            f"{errorEmoji}Error generating PCBs, number of PCBS must be an integer.\n"
+            f"{errorEmoji}Error generating PCBs, no number provided or number is not an integer.\n{commandHelp}\n"
         )
     else:
-        num = int(num)
 
         startingId = (
             sorted(currStatus["processes"].keys())[-1] + 1
@@ -314,7 +292,7 @@ def updateBlockedQ() -> None:
         key=lambda e: e[1],
     )
     spaces, numOfSpaces = " ", 3
-    with open("cpu-log.txt", "w+") as cpuLogfile:
+    with open("cpu-log.txt", "w+",encoding="utf-8") as cpuLogfile:
         cpuLogfile.write(f"{spaces*numOfSpaces}- GOING THROUGH BLOCKED QUEUE TO SEE IF THE EVENT QUEUE SATISFIES ANY OF THE WAITING PROCESSES.\n")
         while bNum < end:
             b = currStatus["blockedQ"][bNum]
@@ -352,7 +330,7 @@ def execute() -> None:
 
     start, end = 0, len(currStatus["readyQ"])
     spaces, numOfSpaces = " ", 0
-    with open("cpu-log.txt", "w+") as cpuLogfile:
+    with open("cpu-log.txt", "w+",encoding="utf-8") as cpuLogfile:
         cpuLogfile.write(f"{spaces*numOfSpaces}CPU SIMULATION.\n")
         while start < end:
             pid = currStatus["readyQ"][start]

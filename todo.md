@@ -10,7 +10,8 @@
 [x] Set the date
 [x] fix displaymsg function
 [x] Add more details to welcome message 
+[x] add cpu logs
 
 [] Make automated tests for all functions
-[] add cpu logs
+[] add type hinting for all variables
 [] do manuals

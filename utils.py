@@ -31,12 +31,14 @@ txtColor = {
     "bold": "\033[1m",
     "underline": "\033[4m",
 }
-def isFloat(n):
+def getRawArg(x):
     try:
-        float(n)
-        return True
+        return int(x)
     except ValueError:
-        return False
+        try:
+            return float(x)
+        except ValueError:
+            return x
 
 def clearConsole():
     _ = osSystem("cls" if osName == "nt" else "clear")
@@ -65,11 +67,17 @@ def displayMsg(msg):
         )
         displayMsg("\n".join(lines[h - margin :]))
 
-def getArg(input, arg):
+def getArg(input, arg, argType):
+    argTypes = [float, str, int]
+    if argType not in argTypes:
+        raise ValueError("argType must be float, int or str")
+
     input = input.split(" ")
     # str in float
     if any(string.startswith(arg) for string in input):
-        return [x for x in input if arg in x][0].split("=")[1]
+        value = [x for x in input if arg in x][0].split("=")[1]
+        raw_value = getRawArg(value)
+        return raw_value if isinstance(raw_value, argType) else None
     else:
         return None
 

@@ -10,10 +10,13 @@ class TestUtils(unittest.TestCase):
         """
         line = "command --id=6"
         arg = "--id"
-        self.assertEqual(getArg(line, arg), "6")
-        line = "command --num=66"
+        self.assertEqual(getArg(line, arg,int), 6)
+        line = "command --num=6.6"
         arg = "--num"
-        self.assertEqual(getArg(line, arg), "66")
+        self.assertEqual(getArg(line, arg, float), 6.6)
+        line = "command --num=hey"
+        arg = "--num"
+        self.assertEqual(getArg(line, arg, str), "hey")
 
     def test_invalidArgs(self):
         """
@@ -21,13 +24,15 @@ class TestUtils(unittest.TestCase):
         """
         line = "command --id=6"
         arg = "num"
-        self.assertEqual(getArg(line, arg), None)
+        self.assertEqual(getArg(line, arg, int), None)
+        line = "command --id=6"
         arg = "="
-        self.assertEqual(getArg(line, arg), None)
+        self.assertEqual(getArg(line, arg, int), None)
+        line = "command --id=6"
         arg = "-id"
-        self.assertEqual(getArg(line, arg), None)
+        self.assertEqual(getArg(line, arg, int), None)
         arg = "id"
-        self.assertEqual(getArg(line, arg), None)
+        self.assertEqual(getArg(line, arg, int), None)
     
 
 if __name__ == "__main__":
