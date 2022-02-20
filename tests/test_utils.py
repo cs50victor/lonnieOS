@@ -17,6 +17,9 @@ class TestUtils(unittest.TestCase):
         line = "command --num=hey"
         arg = "--num"
         self.assertEqual(getArg(line, arg, str), "hey")
+        line = "command --num=0"
+        arg = "--num"
+        self.assertEqual(getArg(line, arg, int), 0)
 
     def test_invalidArgs(self):
         """
@@ -34,6 +37,7 @@ class TestUtils(unittest.TestCase):
         arg = "id"
         self.assertEqual(getArg(line, arg, int), None)
     
+
 
 if __name__ == "__main__":
     unittest.main()

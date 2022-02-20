@@ -149,13 +149,13 @@ def blockedPCBs() -> None:
 def newPCB(input: str)  -> None:
     pid, memory = getArg(input, "--id",int), getArg(input, "--memory",int)
 
-    if not pid:
-        print(f"{errorEmoji}Error creating PCB, no id provided or id is not integer.\n{commandHelp}\n")
+    if pid is None:
+        print(f"{errorEmoji}Error creating PCB, {pid} no id provided or id is not integer.\n{commandHelp}\n")
     elif pid in currStatus["processes"]:
         print(
             f"{errorEmoji}Error creating PCB, process with id={pid} already exists.\n"
         )
-    elif not memory:
+    elif memory is None:
         print(f"{errorEmoji}Error creating PCB, no memory provided or memory is not an integer.\n{commandHelp}\n")
     elif memory > currStatus["memory"]:
         print(
@@ -172,7 +172,7 @@ def newPCB(input: str)  -> None:
 def deletePCB(input: str)  -> None:
     pid = getArg(input, "--id", int)
 
-    if not pid:
+    if pid is None:
         print(f"{errorEmoji}Error deleting PCB, no id provided or id is not an integer.\n{commandHelp}\n")
     elif pid not in currStatus["processes"]:
         print(f"{errorEmoji}Error deleting PCB, process with id={pid} doesn't exist.\n")
@@ -190,7 +190,7 @@ def deletePCB(input: str)  -> None:
 def blockPCB(input: str) -> None:
     pid = getArg(input, "--id", int)
 
-    if not pid:
+    if pid is None:
         print(f"{errorEmoji}Error blocking PCB, no id provided or id is not an integer.\n{commandHelp}\n")
     elif pid not in currStatus["processes"]:
         print(f"{errorEmoji}Error blocking PCB, process with id={pid} doesn't exist.\n")
@@ -212,7 +212,7 @@ def blockPCB(input: str) -> None:
 def unblockPCB(input: str) -> None:
     pid = getArg(input, "--id", int)
 
-    if not pid:
+    if pid is None:
         print(f"{errorEmoji}Error unblocking PCB, no id provided or id is not an integer.\n{commandHelp}\n")
     elif pid not in currStatus["processes"]:
         print(
@@ -234,7 +234,7 @@ def unblockPCB(input: str) -> None:
 def showPCB(input: str) -> None:
     pid = getArg(input, "--id", int)
 
-    if not pid:
+    if pid is None:
         print(f"{errorEmoji}Error displaying PCB, no id provided is not an integer.\n{commandHelp}\n")
     elif pid not in currStatus["processes"]:
         print(
@@ -250,7 +250,7 @@ def showPCB(input: str) -> None:
 def randomPCBs(input: str) -> None:
     num = getArg(input, "--num", int)
 
-    if not num:
+    if num is None:
         print(
             f"{errorEmoji}Error generating PCBs, no number provided or number is not an integer.\n{commandHelp}\n"
         )
@@ -330,7 +330,7 @@ def execute() -> None:
 
     start, end = 0, len(currStatus["readyQ"])
     spaces, numOfSpaces = " ", 0
-    with open("cpu-log.txt", "w+",encoding="utf-8") as cpuLogfile:
+    with open("cpu-log.txt", "w",encoding="utf-8") as cpuLogfile:
         cpuLogfile.write(f"{spaces*numOfSpaces}CPU SIMULATION.\n")
         while start < end:
             pid = currStatus["readyQ"][start]
