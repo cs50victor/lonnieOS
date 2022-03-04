@@ -1,7 +1,13 @@
 import os, platform, random, time
 from datetime import datetime
-from classes.pcb import PCB
+from classes.osPcb import OsPcb
+from classes.mixedPcb import MixedPcb
+from classes.cpuBoundPcb import CpuPcb
+from classes.interactivePcb import InteractivePcb
+
 from utils import *
+
+# pcbMenu
 
 #! -------  USER ACCESSIBLE FUNCTIONS -------
 def exitShell(input: str) -> None:
@@ -19,6 +25,29 @@ def exitShell(input: str) -> None:
         else:
             currStatus["emoji"] = prevEmoji
 
+def cpuMethodInput(prompt, errorMsg)-> int:
+    prevEmoji = currStatus["emoji"]
+    currStatus["emoji"] = prompt
+    invalid = False
+    userInput = ""+getInput()
+
+    if not userInput.isdigit():
+        invalid = True
+    elif userInput.isdigit() and int(userInput)<=0:
+        invalid = True
+    else:
+        invalid = False
+
+    while invalid:
+        print(f"\n{errorMsg}")
+        userInput = getInput()
+        if not userInput.isdigit():
+            invalid = True
+        elif userInput.isdigit() and int(userInput)<=0:
+            invalid = True
+        else:
+            invalid = False
+    return int(userInput)
 
 def showVersion() -> None:
     print(f"{shellName} {shellVersion} ({platform.platform().lower()})\n")
@@ -147,25 +176,39 @@ def blockedPCBs() -> None:
 
 
 def newPCB(input: str)  -> None:
-    pid, memory = getArg(input, "--id",int), getArg(input, "--memory",int)
+    pid = getArg(input, "--id",int)
+    memory = getArg(input, "--memory",int)
+    type = getArg(input, "--type",str)
 
     if pid is None:
-        print(f"{errorEmoji}Error creating PCB, {pid} no id provided or id is not integer.\n{commandHelp}\n")
+        print(f"{errorEmoji}Error creating PCB, {pid} no id provided or id is not an integer.\n{commandHelp}\n")
     elif pid in currStatus["processes"]:
         print(
             f"{errorEmoji}Error creating PCB, process with id={pid} already exists.\n"
         )
     elif memory is None:
         print(f"{errorEmoji}Error creating PCB, no memory provided or memory is not an integer.\n{commandHelp}\n")
-    elif memory > currStatus["memory"]:
+    elif memory > currStatus["memory"]+1:
         print(
-            f"{errorEmoji}Error creating PCB [id:{pid}, memory:{memory}], not enough memory. Available Memory: {currStatus['memory']} MB\n"
+            f"{errorEmoji}Error creating PCB [id:{pid}, memory:{memory}], not enough memory. Available Memory: {currStatus['memory']-1} MB\n"
         )
+    elif type is None:
+        print(f"{errorEmoji}Error creating PCB [id:{pid}, memory:{memory}], no type provided or type is not a string.\n{commandHelp}\n")
+    elif type not in pcbTypes:
+        print(f"{errorEmoji}Error creating PCB [id:{pid}, memory:{memory}], type is not supported. Supported Pcb types {', '.join(pcbTypes)}.\n{commandHelp}\n")
     else:
-        process = PCB(pid, memory)
+        if (type == pcbTypes[0]):
+            process = InteractivePcb(pid, memory)
+            currStatus["processes"][pid] = [process, "readyQ"]
+        elif(type == pcbTypes[1]):
+            process = CpuPcb(pid, memory)
+            currStatus["processes"][pid] = [process, "readyQ"]
+        elif(type == pcbTypes[2]):
+            process = MixedPcb(pid, memory)
+            currStatus["processes"][pid] = [process, "readyQ"]
+
         currStatus["memory"] -= memory
         currStatus["readyQ"].append(pid)
-        currStatus["processes"][pid] = [process, "readyQ"]
         print(f"{successEmoji} Successfully created PCB with id={pid}")
 
 
@@ -254,11 +297,8 @@ def randomPCBs(input: str) -> None:
         )
     else:
 
-        startingId = (
-            sorted(currStatus["processes"].keys())[-1] + 1
-            if len(currStatus["processes"]) > 0
-            else 0
-        )
+        startingId = getUniquePcbId()
+        
         mem = currStatus["memory"] // (num * 2)
 
         if mem <= 0:
@@ -267,7 +307,7 @@ def randomPCBs(input: str) -> None:
             )
         else:
             for i in range(num):
-                newPCB(f"--id={startingId} --memory={mem}")
+                newPCB(f"--id={startingId} --memory={mem} --type={random.choice(['interactive', 'cpu', 'mixed'])}")
                 startingId += 1
 
             print(f"{successEmoji} Successfully generated {num} random PCBs.")
@@ -324,18 +364,54 @@ def updateBlockedQ() -> None:
             bNum += 1
 
 
-def execute() -> None:
+def execute(input) -> None:
+    method = getArg(input, "--method",str)
+    timeQuantum = getArg(input, "--quantum",int)
+    numOfQueues = getArg(input, "--queues",int)
+    errorMsg = "Error, must be an integer!"
+    roundRobin = False
+    mlfq = False
+    allMethods = False
+
+    if method is None:
+        print(f"{errorEmoji}Error running CPU simulation, no method provided or method is not a string.\n{commandHelp}\n")
+    elif method not in cpuExecMethods:
+        print(f"{errorEmoji}Error running CPU simulation, method is not supported. Supported simulation types {', '.join(cpuExecMethods)}.\n{commandHelp}\n")
+    elif method == cpuExecMethods[1] and timeQuantum is None:
+        timeQuantum = cpuMethodInput("time quantum: ", errorMsg)
+        roundRobin = True
+    elif method == cpuExecMethods[2] and numOfQueues is None:
+        numOfQueues = cpuMethodInput("number of queues: ", errorMsg)
+        mlfq = True
+    elif method == cpuExecMethods[3] and (numOfQueues is None):
+        numOfQueues = cpuMethodInput("number of queues: ", errorMsg)
+        allMethods = True
+    elif method == cpuExecMethods[3] and (timeQuantum is None):
+        timeQuantum = cpuMethodInput("time quantum: ", errorMsg)
+        allMethods = True
+    elif method == cpuExecMethods[3] and (numOfQueues is None and timeQuantum is None):
+        numOfQueues = cpuMethodInput("number of queues: ", errorMsg)
+        timeQuantum = cpuMethodInput("time quantum: ", errorMsg)
+        allMethods = True
+
     start_time = time.time()
+    pid = getUniquePcbId()
+    osProcess = OsPcb(pid, 1)
+    currStatus["processes"][pid] = [osProcess, "readyQ"]
+    currStatus["memory"] -= 1
+    currStatus["readyQ"].append(pid)
 
     start, end = 0, len(currStatus["readyQ"])
     spaces, numOfSpaces = " ", 0
     with open("cpu-log.txt", "w",encoding="utf-8") as cpuLogfile:
         cpuLogfile.write(f"{spaces*numOfSpaces}CPU SIMULATION.\n")
-        while start < end:
+        while start+1 < end:
             pid = currStatus["readyQ"][start]
             assert len(currStatus["cpu"]) < 2, "CPU can only hold one PCB."
 
             process = currStatus["processes"][pid][0]
+            processType = process.getType()!="os"
+            
             currStatus["cpu"].append(process)
             cpuLogfile.write(f"{spaces*(numOfSpaces+1)}Process [pid: {process.getPid()}] entered the CPU.\n")
 
@@ -344,11 +420,12 @@ def execute() -> None:
             cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Process time generated {processingTime}(s).\n")
             cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Process CPU Usage Term increased by {processingTime}.\n")
 
+            contextSwitchTime = processingTime+10
             for p in currStatus["processes"].values():
                 p = p[0]
-                if pid != p.getPid():
-                    p.addWt(processingTime)
-            cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Updated the Waiting Term in other processes by {processingTime}.\n")
+                if pid != p.getPid() and processType!="os":
+                    p.addWt(contextSwitchTime)
+            cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Updated the Waiting Term in other processes by {contextSwitchTime}.\n")
 
             for t in range(0, processingTime, 10):
                 r = random.randint(0, 10)
@@ -360,7 +437,7 @@ def execute() -> None:
                     currStatus["ioQ"].append(["h", t])
                     cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Added a hard drive I/O event to the event queue with a timecycle stamp of {t}.\n")
 
-            decision = random.randint(0, 3)
+            decision = random.randint(0, 3) if processType!="os" else 1
             cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Generated random number between 0 and 3 to determine what happens with the process - {decision}.\n")
 
             if decision == 0:
@@ -385,7 +462,6 @@ def execute() -> None:
             updateBlockedQ()
             currStatus["cpu"].pop(0)
             end = len(currStatus["readyQ"])
-            break
         end_time = time.time()-start_time
         cpuLogfile.write(f"{spaces*numOfSpaces}CPU SIMULATION FINISHED.\n")
         cpuLogfile.write(f"{spaces*numOfSpaces}Total Number of processes in ready queue - {len(currStatus['readyQ'])}.\n")
@@ -416,7 +492,6 @@ def handleCmds(input: str):
             allCmds[cmd]["func"]["name"]()
     else:
         print(f"\n+++ no such command: {cmd}\n")
-
 
 allCmds = {
     "alias": {
@@ -476,7 +551,7 @@ allCmds = {
     },
     "new-pcb": {
         "description": "create a new Process Control Block.",
-        "help": "create a new Process Control Block.\nUsage : [COMMAND] [--id]=[integer] [--memory]=[integer] \nRequired arguments --id (unique PCB id) , and --memory (PCB memory allocation).",
+        "help": f"create a new Process Control Block.\nUsage : [COMMAND] [--id]=[integer] [--memory]=[integer] [--type]=[{' | '.join(pcbTypes)}] \nRequired arguments --id (unique PCB id) , and --memory (PCB memory allocation).",
         "func": {"hasParams": True, "name": newPCB},
     },
     "generate-pcbs": {
@@ -491,8 +566,8 @@ allCmds = {
     },
     "run-cpu": {
         "description": "run a cpu process simulation.",
-        "help": "run a cpu process simulation.\nUsage : [COMMAND] | this command doesn't take any other arguments.",
-        "func": {"hasParams": False, "name": execute},
+        "help": f"run a cpu process simulation.\nUsage : [COMMAND]  [--method]=[{' | '.join(cpuExecMethods)}]  --quantum=[integer] --queues=[integer].\nRequired argument --method (scheduling algorithm for cpu simulation).\nOptional arguments --quantum (how many time cycles the process stays in the CPU before being kicked out) and --queues (number of queues for Multilevel Feedback Queue simulation.)",
+        "func": {"hasParams": True, "name": execute},
     },
     "script": {
         "description": "run commands from a batch file or script.",

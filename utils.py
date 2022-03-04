@@ -7,6 +7,9 @@ shellShortFm = "ln"
 successEmoji = "✅" # 🎉
 errorEmoji = "❗️"
 commandHelp = "Run [COMMAND --help] for more information on a command."
+pcbMenu = "[1]. Interactive\n[2]. CPU Bound\n[3]. Mixed\n"
+pcbTypes=["interactive", "cpu", "mixed"]
+cpuExecMethods = ["default","round-robin","mlfq","all"]
 
 currStatus = {
     "session": False,
@@ -39,6 +42,9 @@ def getRawArg(x):
             return float(x)
         except ValueError:
             return x
+
+def getUniquePcbId():
+    return (sorted(currStatus["processes"].keys())[-1] + 1 if len(currStatus["processes"]) > 0 else 0)
 
 def clearConsole():
     _ = osSystem("cls" if osName == "nt" else "clear")
