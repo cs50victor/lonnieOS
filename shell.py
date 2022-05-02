@@ -1,52 +1,56 @@
-import json, os, subprocess
-from main import handleCmds
-from utils import shellName, currStatus, txtColor, clearConsole, getInput, shellVersion
+"""
+    A Command Line Interface (CLI) connects a user to a computer program or operating system. 
+    Through the CLI, users interact with a system or application by typing in text (commands). 
+"""
+import os
+from main import (
+    lonnieOS,
+    getInput,
+    shellName,
+    handleCmds,
+    shellStatus,
+    clearConsole,
+    shellVersion,
+    shellTextColor,
+    printWarningMsg,
+)
 
 
-def loadMemory():
+def loadMemory() -> None:
+    # * Sets the system's memory by reading the memory.json file.
+    # * Uses a fallback value if unsuccessful.
     try:
-        with open("memory.json") as json_file:
-            data = json.load(json_file)
-            if isinstance(data["memory"], int) or isinstance(data["memory"], float):
-                currStatus["memory"] = round(data["memory"])
-            else:
-                print(
-                    f"{txtColor['yellow']}Memory value must be a number (memory.json). Using fallback memory allocation.{txtColor['reset']}"
-                )
-    except FileNotFoundError:
-        print(
-            f"{txtColor['yellow']}Memory file (memory.json) not found. Using fallback memory allocation.{txtColor['reset']}"
-        )
+        lonnieOS.setSystemMemoryFromFile()
     except Exception as err:
-        print(
-            f"{txtColor['yellow']}Error reading memory file (memory.json). Using fallback memory allocation - [{err}]{txtColor['reset']}"
-        )
+        printWarningMsg(f"{err}")
 
 
-def welcomeMsg():
-    w = (os.get_terminal_size().columns) - 10
-    leftMargin = " " * 10
-    border = f"-|------------------------------------------------------|-"
-    lines = [
-        " ",
-        f"{shellName.upper()} v{shellVersion}",
-        f"Memory: {currStatus['memory']} MB. for more details enter 'help'.",
-        " ",
-    ]
-    print(f"{leftMargin}{border}")
-    for line in lines:
-        print(f"{leftMargin} |{line.center(len(border)-4)}|")
-    print(f"{leftMargin}{border}")
+def welcomeMsg() -> None:
+    # * Displays a welcome message containing the
+    # * system memory, shell name and shell version.
+
+    print(
+        f"""
+                     █  
+     ▄█▄ █▀█▀█ ▄█▄   █  {shellTextColor["bold"]}{shellName.upper()} v{shellVersion}{shellTextColor["reset"]}
+     ▀▀███▄█▄████▀   █  RAM: {lonnieOS.getSystemMemory()} MB.
+         ▀█▀█▀       █  for more details enter 'help'.
+    """
+    )
 
 
-def runShell():
-    currStatus["session"] = True
+def runShell() -> None:
+    # * Receives and handles all shell commands until the program is exited.
+
+    shellStatus["isRunning"] = True
     clearConsole()
+    # run all tests
     os.system("python -m unittest discover -s tests -t tests")
     loadMemory()
+    # display welcome message
     welcomeMsg()
 
-    while currStatus["session"]:
+    while shellStatus["isRunning"]:
         input = getInput()
         handleCmds(input)
 

@@ -1,497 +1,420 @@
-import os, platform, random, time
+import os, platform, time
 from datetime import datetime
-from classes.osPcb import OsPcb
-from classes.mixedPcb import MixedPcb
-from classes.cpuBoundPcb import CpuPcb
-from classes.interactivePcb import InteractivePcb
+from shellConfig import *
+from classes.os import OS
 
-from utils import *
+# create an operating system instance
+# provides an api for kernel level commands (PCB related commands)
+lonnieOS = OS()
 
-# pcbMenu
+"""
+  This file is divided into 3 major sections 
+  and contains all the functions/commands that 
+  a user can call in the shell.
 
-#! -------  USER ACCESSIBLE FUNCTIONS -------
+  1 - SHELL ONLY FUNCTIONS [NON PCB/OS FUNCTIONS ]
+  2 - PCB & OPERATING SYSTEM SHELL FUNCTIONS 
+  3 - ALL SHELL COMMANDS MAPPED TO THEIR DESCRIPTION & FUNCTION
+"""
+
+# * --------- SHELL ONLY FUNCTIONS [AKA NON OS/PCB FUNCTIONS ]--------------
+
+
 def exitShell(input: str) -> None:
-    if "-y" in input:
-        currStatus["session"] = False
+    # Allows the user to exit the program
+
+    if input.endswith(" -y"):
+        shellStatus["isRunning"] = False
     else:
-        prevEmoji = currStatus["emoji"]
-        currStatus["emoji"] = f"Exit the {shellName} shell? "
+        prevEmoji = shellStatus["emoji"]
+        shellStatus["emoji"] = f"Exit the {shellName} shell? "
         cmd = getInput()
         while cmd not in ["yes", "no", "y", "n"]:
             print(f"\nInvalid input! Please enter Yes[y]/No[n]")
             cmd = getInput()
         if cmd in ["yes", "y"]:
-            currStatus["session"] = False
+            shellStatus["isRunning"] = False
         else:
-            currStatus["emoji"] = prevEmoji
+            shellStatus["emoji"] = prevEmoji
 
-def cpuMethodInput(prompt, errorMsg)-> int:
-    prevEmoji = currStatus["emoji"]
-    currStatus["emoji"] = prompt
-    invalid = False
-    userInput = ""+getInput()
-
-    if not userInput.isdigit():
-        invalid = True
-    elif userInput.isdigit() and int(userInput)<=0:
-        invalid = True
-    else:
-        invalid = False
-
-    while invalid:
-        print(f"\n{errorMsg}")
-        userInput = getInput()
-        if not userInput.isdigit():
-            invalid = True
-        elif userInput.isdigit() and int(userInput)<=0:
-            invalid = True
-        else:
-            invalid = False
-    return int(userInput)
 
 def showVersion() -> None:
+    # Displays the current version of the shell to the user
+
     print(f"{shellName} {shellVersion} ({platform.platform().lower()})\n")
 
 
 def showDate() -> None:
+    # Displays the current date to the user
+
     print(f"⏳ {datetime.now().strftime('%m/%d/%Y, %H:%M:%S %p')}\n")
 
 
 def listDirFiles() -> None:
-    # "assume that there is only one directory for the OS"
-    msg = "\n\nFiles in directory:\n"
-    for f in os.listdir():
-        msg += f"+++ {f}\n"
+    # Assumes that there is only one directory for this OS
+    # & displays all the files in the current directory
+
+    header = "Files in directory"
+    msg = underlineMsg(f"{header}:")
+    for i, file in enumerate(os.listdir()):
+        msg += f"{i+1}. {file}\n"
     displayMsg(msg)
 
 
 def getCmdHistory() -> None:
-    history = currStatus["cmdHistory"]
-    msg = "\n\nLast 10 commands:\n"
-    for i in range(len(history)):
-        h = history[i]
-        msg += f"{i+1}. {h['cmd']}\n"
+    # Displays the last 10 commands entered in the shell by the user
+
+    history = shellStatus["cmdHistory"]
+    msg = underlineMsg("Last 10 commands")
+
+    for i, command in enumerate(history):
+        msg += f"{command['time']} | ".ljust(10) + f"{i+1}. {command['cmd']}\n"
     displayMsg(msg)
 
 
 def showHelp() -> None:
-    msg = "\nYou can:\n\n"
-    i = 1
-    for key in sorted(allCmds):
-        msg += f" {i}. {key}".ljust(20)
-        msg += f'- {allCmds[key]["description"]}\n'
-        i += 1
+    # Displays helpful information on all the available shell commands to the user
+
+    msg = underlineMsg("Available Commands:")
+
+    for i, el in enumerate(sorted(allCmds.items())):
+        key, value = el
+        msg += f"{i+1}. {key}".ljust(20) + f'- {value["description"]}\n'
 
     msg += f"\n{commandHelp}.\n"
     print(msg)
 
 
-def handleAliasing(input: str)  -> None:
+def setDate(cmd: str) -> None:
+    # Allows the user to set the date of the operating system
+
+    try:
+        print("\nThis command needs admin privileges.")
+        date = cmd.replace("setdate", "").strip()
+        os.system(f'date -s "${date}"')
+    except:
+        printErrorMsg(f"Error setting date!\n{commandHelp}")
+
+
+def handleAliasing(input: str) -> None:
+    # Changes a shell command's current name to a new name specified by the user
+
     try:
         oldCmd, newCmd = input.split("=")
         oldCmd, newCmd = oldCmd.split(" ")[1].strip(), newCmd.strip()
 
-        if newCmd and (oldCmd in allCmds):
-            allCmds[newCmd] = allCmds.pop(oldCmd)
-            print(f"\n{successEmoji} Successfully aliased {oldCmd} to {newCmd}\n")
-        else:
-            print(f"\nInvalid command format!\n{commandHelp}\n")
+        allCmds[newCmd] = allCmds.pop(oldCmd)
+        printSuccessMsg(f"Successfully aliased '{oldCmd}' to '{newCmd}'")
+    except KeyError:
+        printErrorMsg(
+            f"Invalid alias command!You tried aliasing a command that doesn't exit.\n{commandHelp}"
+        )
     except:
-        print(f"\nInvalid command format!\n{commandHelp}\n")
+        printErrorMsg(f"Invalid alias command format!\n{commandHelp}")
 
 
-def handleScripts(input: str)  -> None:
+def handleScripts(input: str) -> None:
+    # Executes a sequence of shell commands from a script/batch file
+
     commandsToDo = []
     try:
         fileName = input.split(" ")[1].strip()
+        # path
         with open(fileName, encoding="utf-8") as f:
             commandsToDo = f.readlines()
         for c in commandsToDo:
-            c = c.strip().lower()
-            handleCmds(c)
+            if(len(c.strip())):
+                header = underlineMsg('script cmd:').replace('\n','')
+                print(f"{header} {c}")
+                handleCmds(c)
     except IOError:
-        print(f"\n{txtColor['yellow']}can't open file: {fileName}{txtColor['reset']}\n")
+        printWarningMsg("can't open provided script/batch file.")
     except Exception as err:
-        print(f"\nInvalid script command : {err}!\n{commandHelp}\n")
-
-
-def setDate(cmd: str)  -> None:
-    try:
-        print("\nThis process needs admin privileges.")
-        date = cmd.replace("setdate", "").strip()
-        os.system(f'date -s "${date}"')
-    except Exception as err:
-        print(f"\nError setting date!\n{err}\n{commandHelp}")
+        printErrorMsg(f"Invalid script command format!\n{commandHelp}\n{err}")
 
 
 def changeEmoji(input: str) -> None:
+    # Allows the user to change the emoji shown in the shell
+
     try:
         newEmoji = input.split(" ")[1]
 
         if newEmoji:
-            currStatus["emoji"] = newEmoji
-            print(f"\n{successEmoji} Successfully changed emoji to -> {newEmoji}\n")
+            shellStatus["emoji"] = newEmoji
+            printSuccessMsg(f"Successfully changed emoji to -> {newEmoji}")
         else:
-            print(f"\nInvalid emoji command!\n{commandHelp}\n")
+            printErrorMsg(
+                f"Invalid emoji command! Did not enter a valid new emoji.\n{commandHelp}"
+            )
     except:
-        print(f"\nInvalid emoji command!\n{commandHelp}\n")
+        printErrorMsg(f"Invalid emoji command!\n{commandHelp}")
 
 
-#! --------- PCB FUNCTIONS --------------
+def handleCmds(input: str):
+    # This handles mapping/connecting the commands entered in the shell to their functions
+
+    input = input.strip().lower()
+
+    if len(input):
+        if len(shellStatus["cmdHistory"]) >= 10:
+            shellStatus["cmdHistory"].pop(0)
+
+        time = datetime.now().strftime("%I:%M:%S %p")
+        shellStatus["cmdHistory"].append({"time": time, "cmd": input})
+
+        cmd = input.split(" ")[0]
+
+        if "--help" in input:
+            if allCmds.get(cmd):
+                print(f"\n{allCmds[cmd]['help']}\n")
+            else:
+                showHelp()
+        elif cmd in allCmds:
+            if allCmds[cmd]["func"]["hasParams"]:
+                allCmds[cmd]["func"]["name"](input)
+            else:
+                allCmds[cmd]["func"]["name"]()
+        else:
+            print(f"++ command not found: {cmd}\nEnter 'help' to see all available commands.\n")
+
+
+# * --------- PCB & OPERATING SYSTEM SHELL FUNCTIONS --------------
+
+
 def allPCBs() -> None:
-    if currStatus["processes"]:
-        msg = ""
-        for pid in sorted(currStatus["processes"]):
-            process, queueName = currStatus["processes"][pid]
-            msg += f"\n PID: {pid} | Queue: {queueName} | CUT: {process.getCpuT()} cycles | I/O-T: {process.getIot()} cycles | WT: {process.getWt()} cycles | Memory: {process.getMemory()} MB\n"
+    # Displays a list of all Processes in the system.
+
+    if lonnieOS.processes.isNotEmpty():
+        msg = underlineMsg("ALL PCBS")
+        for pid in lonnieOS.processes.getSortedIds():
+            process = lonnieOS.processes.retreive(pid)
+            msg += f"{process}\n"
         displayMsg(msg)
     else:
-        print("No PCBs available.")
+        print("No PCBs available.\n")
 
 
 def readyPCBs() -> None:
-    if currStatus["readyQ"]:
-        msg = ""
-        for pid in currStatus["readyQ"]:
-            process, queueName = currStatus["processes"][pid]
-            msg += f"\n PID: {pid} | Queue: {queueName} | CUT: {process.getCpuT()} cycles | I/O-T: {process.getIot()} cycles | WT: {process.getWt()} cycles | Memory: {process.getMemory()} MB\n"
+    # Displays a list of all system processes in the ready queue.
+
+    if lonnieOS.readyQ.isNotEmpty():
+        msg = underlineMsg("PCBS IN READY QUEUE")
+        for pid in lonnieOS.readyQ.getAllIdsUnsorted():
+            process = lonnieOS.processes.retreive(pid)
+            msg += f"{process}\n"
         displayMsg(msg)
     else:
-        print("No PCBs in the ready queue.")
+        print("No PCBs in the ready queue.\n")
 
 
 def blockedPCBs() -> None:
-    if currStatus["blockedQ"]:
-        msg = ""
-        for b in currStatus["blockedQ"]:
-            if isinstance(b, list):
-                pid = b[0]
+    # Displays a list of all currently blocked system processes.
+
+    if lonnieOS.blockedQ.isNotEmpty():
+        msg = underlineMsg("ALL BLOCKED PCBS")
+        for b in lonnieOS.blockedQ.getAll():
+            if isinstance(b, dict):
+                pid = b["pid"]
             else:
                 pid = b
-            process, queueName = currStatus["processes"][pid]
-            msg += f"\n PID: {pid} | Queue: {queueName} | blocked time: {process.getBt()} | CUT: {process.getCpuT()} cycles | I/O-T: {process.getIot()} cycles | WT: {process.getWt()} cycles | Memory: {process.getMemory()} MB\n"
+            process = lonnieOS.processes.retreive(pid)
+            msg += f"{process}\n"
         displayMsg(msg)
     else:
-        print("No PCBs in the blocked queue.")
-
-
-def newPCB(input: str)  -> None:
-    pid = getArg(input, "--id",int)
-    memory = getArg(input, "--memory",int)
-    type = getArg(input, "--type",str)
-
-    if pid is None:
-        print(f"{errorEmoji}Error creating PCB, {pid} no id provided or id is not an integer.\n{commandHelp}\n")
-    elif pid in currStatus["processes"]:
-        print(
-            f"{errorEmoji}Error creating PCB, process with id={pid} already exists.\n"
-        )
-    elif memory is None:
-        print(f"{errorEmoji}Error creating PCB, no memory provided or memory is not an integer.\n{commandHelp}\n")
-    elif memory > currStatus["memory"]+1:
-        print(
-            f"{errorEmoji}Error creating PCB [id:{pid}, memory:{memory}], not enough memory. Available Memory: {currStatus['memory']-1} MB\n"
-        )
-    elif type is None:
-        print(f"{errorEmoji}Error creating PCB [id:{pid}, memory:{memory}], no type provided or type is not a string.\n{commandHelp}\n")
-    elif type not in pcbTypes:
-        print(f"{errorEmoji}Error creating PCB [id:{pid}, memory:{memory}], type is not supported. Supported Pcb types {', '.join(pcbTypes)}.\n{commandHelp}\n")
-    else:
-        if (type == pcbTypes[0]):
-            process = InteractivePcb(pid, memory)
-            currStatus["processes"][pid] = [process, "readyQ"]
-        elif(type == pcbTypes[1]):
-            process = CpuPcb(pid, memory)
-            currStatus["processes"][pid] = [process, "readyQ"]
-        elif(type == pcbTypes[2]):
-            process = MixedPcb(pid, memory)
-            currStatus["processes"][pid] = [process, "readyQ"]
-
-        currStatus["memory"] -= memory
-        currStatus["readyQ"].append(pid)
-        print(f"{successEmoji} Successfully created PCB with id={pid}")
-
-
-def deletePCB(input: str)  -> None:
-    pid = getArg(input, "--id", int)
-
-    if pid is None:
-        print(f"{errorEmoji}Error deleting PCB, no id provided or id is not an integer.\n{commandHelp}\n")
-    elif pid not in currStatus["processes"]:
-        print(f"{errorEmoji}Error deleting PCB, process with id={pid} doesn't exist.\n")
-    else:
-        process, queueName = currStatus["processes"][pid]
-        currStatus[queueName].remove(pid)
-        del currStatus["processes"][pid]
-        currStatus["memory"] += process.getMemory()
-        print(f"{successEmoji} Successfully deleted PCB with Pid={pid}| Queue: {queueName} | CUT: {process.getCpuT()} cycles | I/O-T: {process.getIot()} cycles | WT: {process.getWt()} cycles | Memory: {process.getMemory()} MB\n")
-        process.delete()
-
-
-def blockPCB(input: str) -> None:
-    pid = getArg(input, "--id", int)
-
-    if pid is None:
-        print(f"{errorEmoji}Error blocking PCB, no id provided or id is not an integer.\n{commandHelp}\n")
-    elif pid not in currStatus["processes"]:
-        print(f"{errorEmoji}Error blocking PCB, process with id={pid} doesn't exist.\n")
-    elif pid in currStatus["blockedQ"]:
-        print(
-            f"{errorEmoji}Error unblocking PCB, process with id={pid} is already blocked.\n"
-        )
-    else:
-        process, queueName = currStatus["processes"][pid]
-        currStatus[queueName].remove(pid)
-        currStatus["blockedQ"].append(pid)
-        currStatus["processes"][pid] = [process, "blockedQ"]
-
-        print(
-            f"{successEmoji} Successfully blocked PCB with PID={pid}| Queue: {queueName} | CUT: {process.getCpuT()} cycles | I/O-T: {process.getIot()} cycles | WT: {process.getWt()} cycles | Memory: {process.getMemory()} MB\n"
-        )
-
-
-def unblockPCB(input: str) -> None:
-    pid = getArg(input, "--id", int)
-
-    if pid is None:
-        print(f"{errorEmoji}Error unblocking PCB, no id provided or id is not an integer.\n{commandHelp}\n")
-    elif pid not in currStatus["processes"]:
-        print(
-            f"{errorEmoji}Error unblocking PCB, process with id={pid} doesn't exist.\n"
-        )
-    elif pid in currStatus["readyQ"]:
-        print(
-            f"{errorEmoji}Error unblocking PCB, process with id={pid} is already unblocked.\n"
-        )
-    else:
-        process, queueName = currStatus["processes"][pid]
-
-        currStatus[queueName].remove(pid)
-        currStatus["readyQ"].append(pid)
-        currStatus["processes"][pid] = [process, "readyQ"]
-        print(f"{successEmoji} Successfully unblocked PCB with id={pid}")
+        print("No PCBs in the blocked queue.\n")
 
 
 def showPCB(input: str) -> None:
+    # Displays details of a specified system process.
+
     pid = getArg(input, "--id", int)
 
-    if pid is None:
-        print(f"{errorEmoji}Error displaying PCB, no id provided is not an integer.\n{commandHelp}\n")
-    elif pid not in currStatus["processes"]:
-        print(
-            f"{errorEmoji}Error displaying PCB, process with id={pid} doesn't exist.\n"
+    if not isinstance(pid, int):
+        printErrorMsg(
+            f"Can't show PCB info. no id provided or id is not an integer.\n{commandHelp}"
         )
     else:
-        process, queueName = currStatus["processes"][pid]
-        print(
-            f"\n PID: {pid} | Queue: {queueName} | CUT: {process.getCpuT()} cycles | I/O-T: {process.getIot()} cycles | WT: {process.getWt()} cycles | Memory: {process.getMemory()} MB"
+        try:
+            process = lonnieOS.processes.retreive(pid)  # type: ignore
+            print(process)
+        except Exception as err:
+            printErrorMsg(f"{err}")
+
+
+def newPCB(input: str) -> None:
+    # Allows the user to create a new process
+
+    pid = getArg(input, "--id", int)
+    memory = getArg(input, "--memory", float)
+    pcbType = getArg(input, "--type", str)
+
+    try:
+        lonnieOS.createPCB(pid, memory, pcbType)  # type: ignore
+        printSuccessMsg(
+            f"Created PCB [ id={pid}, memory={memory}, type={pcbType}]. Memory left {lonnieOS.getSystemMemory()} MB"
         )
+    except Exception as err:
+        printErrorMsg(f"{err}")
+
+
+def deletePCB(input: str) -> None:
+    # Allows the user to delete a process
+
+    pid = getArg(input, "--id", int)
+
+    try:
+        processInfo = lonnieOS.deletePCB(pid)  # type: ignore
+        printSuccessMsg(f"Deleted PCB with {processInfo}")
+    except Exception as err:
+        printErrorMsg(f"{err}")
+
+
+def blockPCB(input: str) -> None:
+    # Allows the user to block a process
+
+    pid = getArg(input, "--id", int)
+
+    try:
+        lonnieOS.blockPCB(pid)  # type: ignore
+        printSuccessMsg(f"Blocked PCB with PID={pid}")
+    except Exception as err:
+        printErrorMsg(f"{err}")
+
+
+def unblockPCB(input: str) -> None:
+    # Allows the user to unblock a process
+
+    pid = getArg(input, "--id", int)
+
+    try:
+        lonnieOS.unblockPCB(pid)  # type: ignore
+        printSuccessMsg(f"Unblocked PCB with PID={pid}")
+    except Exception as err:
+        printErrorMsg(f"{err}")
 
 
 def randomPCBs(input: str) -> None:
+    # Allows the user to generate a number of random processes
+
     num = getArg(input, "--num", int)
 
-    if num is None:
-        print(
-            f"{errorEmoji}Error generating PCBs, no number provided or number is not an integer.\n{commandHelp}\n"
+    try:
+        lonnieOS.generatePCBs(num)  # type: ignore
+        printSuccessMsg(
+            f"Generated {num} random PCBs. Memory left {lonnieOS.getSystemMemory()} MB"
         )
-    else:
-
-        startingId = getUniquePcbId()
-        
-        mem = currStatus["memory"] // (num * 2)
-
-        if mem <= 0:
-            print(
-                f"{errorEmoji} Not enough memory to create {num} PCBs. [ MAX # of PCBs - {currStatus['memory']} ]"
-            )
-        else:
-            for i in range(num):
-                newPCB(f"--id={startingId} --memory={mem} --type={random.choice(['interactive', 'cpu', 'mixed'])}")
-                startingId += 1
-
-            print(f"{successEmoji} Successfully generated {num} random PCBs.")
+    except Exception as err:
+        printErrorMsg(f"{err}")
 
 
-def updateBlockedQ() -> None:
-    # not an optimal solution
-    bNum, end = 0, len(currStatus["blockedQ"])
-    if bNum == end:
-        return
-    currStatus["blockedQ"].sort(
-        key=lambda x: isinstance(x, list) and x[2], reverse=True
-    )
-    waitingProcess = list(filter(lambda x: isinstance(x, list), currStatus["blockedQ"]))
-    if not waitingProcess:
-        return
-    minBlockedT = waitingProcess[-1][2]
-    currStatus["ioQ"] = sorted(
-        list(filter(lambda x: (x[1] > minBlockedT), currStatus["ioQ"])),
-        key=lambda e: e[1],
-    )
-    spaces, numOfSpaces = " ", 3
-    with open("cpu-log.txt", "w+",encoding="utf-8") as cpuLogfile:
-        cpuLogfile.write(f"{spaces*numOfSpaces}- GOING THROUGH BLOCKED QUEUE TO SEE IF THE EVENT QUEUE SATISFIES ANY OF THE WAITING PROCESSES.\n")
-        while bNum < end:
-            b = currStatus["blockedQ"][bNum]
-            if not isinstance(b, list):
-                break
-            pid = b[0]
-            process = currStatus["processes"][pid][0]
-            cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Blocked process [pid: {process.getPid()}, entered the blocked at : {process.getBt()}]\n")
+def execute(input: str) -> None:
+    # Allows the user to simulate different cpu scheduling algorithms
 
-            
-            for e in currStatus["ioQ"]:
-                bt = process.getBt()
-                if e[0] == b[1] and e[1] > bt:
-                    cpuLogfile.write(f"{spaces*(numOfSpaces+2)}- Found event [type: {e[0]}, timestamp:{e[1]}] to satisfy blocked process request [pid: {process.getPid()}, entered the blocked at : {process.getBt()}]\n")
-                    t = e[1] - bt
-                    process.setIot(t)
-                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Updated the I/O usage time with how long it took the process to get the appropriate I/O - {t}.\n")
-                    process.setBt(0)
-                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Set process blocked time to 0.\n")
-                    process.addWt(t)
-                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Updated process waiting value by {t}.\n")
-                    currStatus["ioQ"].remove(e)
-                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Remove I/O event from I/O queue .\n")
-                    currStatus["readyQ"].append(pid)
-                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Added process to ready queue.\n")
-                    currStatus["processes"][pid] = [process, "readyQ"]
-                    currStatus["blockedQ"].remove(b)
-                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Removed process from blocked queue.\n")
-                    end -= 1
-                    break
-            bNum += 1
+    method = getArg(input, "--scheduler", str)
+    quantum = getArg(input, "--quantum", int)
+    numOfQueues = getArg(input, "--queues", int)
+    debug = getArg(input, "--debug", str)
 
+    minQuantum = 1000
+    maxQuantum = 5000
+    minNumOfQueues = 1
+    maxNumOfQueues = lonnieOS.readyQ.size()
 
-def execute(input) -> None:
-    method = getArg(input, "--method",str)
-    timeQuantum = getArg(input, "--quantum",int)
-    numOfQueues = getArg(input, "--queues",int)
-    errorMsg = "Error, must be an integer!"
-    roundRobin = False
-    mlfq = False
-    allMethods = False
+    useDebug = debug in ["true", "yes", "y"]
+    schedules = lonnieOS.getSchedulingPolicies()
 
     if method is None:
-        print(f"{errorEmoji}Error running CPU simulation, no method provided or method is not a string.\n{commandHelp}\n")
-    elif method not in cpuExecMethods:
-        print(f"{errorEmoji}Error running CPU simulation, method is not supported. Supported simulation types {', '.join(cpuExecMethods)}.\n{commandHelp}\n")
-    elif method == cpuExecMethods[1] and timeQuantum is None:
-        timeQuantum = cpuMethodInput("time quantum: ", errorMsg)
-        roundRobin = True
-    elif method == cpuExecMethods[2] and numOfQueues is None:
-        numOfQueues = cpuMethodInput("number of queues: ", errorMsg)
-        mlfq = True
-    elif method == cpuExecMethods[3] and (numOfQueues is None):
-        numOfQueues = cpuMethodInput("number of queues: ", errorMsg)
-        allMethods = True
-    elif method == cpuExecMethods[3] and (timeQuantum is None):
-        timeQuantum = cpuMethodInput("time quantum: ", errorMsg)
-        allMethods = True
-    elif method == cpuExecMethods[3] and (numOfQueues is None and timeQuantum is None):
-        numOfQueues = cpuMethodInput("number of queues: ", errorMsg)
-        timeQuantum = cpuMethodInput("time quantum: ", errorMsg)
-        allMethods = True
+        printErrorMsg(
+            f"Error running CPU simulation, no method provided or method is not a string.\n{commandHelp}"
+        )
+        return None
+    elif method not in schedules:
+        printErrorMsg(
+            f"No valid scheduling policy chosen for cpu simulation!. Supported simulation methods {','.join(lonnieOS.getSchedulingPolicies())}.\n{commandHelp}"
+        )
+        return None
+    elif method == schedules[1]:
+        if not quantum or (quantum > maxQuantum or quantum < minQuantum):  # type: ignore
+            quantum = cpuMethodChoice("time quantum ", minQuantum, maxQuantum)
+    elif method == schedules[2]:
+        if not numOfQueues or (numOfQueues > maxNumOfQueues or numOfQueues < minNumOfQueues):  # type: ignore
+            numOfQueues = cpuMethodChoice("number of queues ", minNumOfQueues, maxNumOfQueues)
+    elif method == schedules[3]:
+        if not quantum or (quantum > maxQuantum or quantum < minQuantum):  # type: ignore
+            quantum = cpuMethodChoice("time quantum ", minQuantum, maxQuantum)
+        if not numOfQueues or (numOfQueues > maxNumOfQueues or numOfQueues < minNumOfQueues):  # type: ignore
+            numOfQueues = cpuMethodChoice("number of queues ", minNumOfQueues, maxNumOfQueues)
 
-    start_time = time.time()
-    pid = getUniquePcbId()
-    osProcess = OsPcb(pid, 1)
-    currStatus["processes"][pid] = [osProcess, "readyQ"]
-    currStatus["memory"] -= 1
-    currStatus["readyQ"].append(pid)
+    numOfPcbs = lonnieOS.processes.size() - 1
+    startTime = time.time()
+    cpuLog = ""
 
-    start, end = 0, len(currStatus["readyQ"])
-    spaces, numOfSpaces = " ", 0
-    with open("cpu-log.txt", "w",encoding="utf-8") as cpuLogfile:
-        cpuLogfile.write(f"{spaces*numOfSpaces}CPU SIMULATION.\n")
-        while start+1 < end:
-            pid = currStatus["readyQ"][start]
-            assert len(currStatus["cpu"]) < 2, "CPU can only hold one PCB."
+    # run differnet cpu schedulers based on the user's choice 
+    if method == schedules[0]:
+        try:
+            details = lonnieOS.runFIFOScheduler(useDebug)
+            cpuLog += details["log"]
+            print(details["metrics"])
+        except Exception as err:
+            printErrorMsg(f"{err}")
+            return
 
-            process = currStatus["processes"][pid][0]
-            processType = process.getType()!="os"
-            
-            currStatus["cpu"].append(process)
-            cpuLogfile.write(f"{spaces*(numOfSpaces+1)}Process [pid: {process.getPid()}] entered the CPU.\n")
+    elif method == schedules[1]:
+        try:
+            details = lonnieOS.runRRScheduler(quantum, useDebug)  # type: ignore
+            cpuLog += details["log"]
+            print(details["metrics"])
+        except Exception as err:
+            printErrorMsg(f"{err}")
+            return
+    elif method == schedules[2]:
+        try:
+            details = lonnieOS.runMLFQScheduler(numOfQueues, useDebug)  # type: ignore
+            cpuLog += details["log"]
+            print(details["metrics"])
+        except Exception as err:
+            printErrorMsg(f"{err}")
+            return
+    elif method == schedules[3]:
+        try:
+            details = lonnieOS.runAllSchedulers(quantum,numOfQueues, useDebug)  # type: ignore
+            cpuLog += details["log"]
+            print(details["metrics"])
+        except Exception as err:
+            printErrorMsg(f"{err}")
+            return
 
-            processingTime = random.randint(0, 10000)
-            process.addCpuT(processingTime)
-            cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Process time generated {processingTime}(s).\n")
-            cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Process CPU Usage Term increased by {processingTime}.\n")
+    with open("cpu-log.txt", "w", encoding="utf-8") as cpuLogfile:
+        cpuLogfile.write(f"CPU SIMULATION.\n")
+        cpuLogfile.write(f"{cpuLog}.\n")
+        cpuLogfile.write(f"CPU SIMULATION FINISHED.\n")
+        endTime = round(time.time() - startTime, 4)
+        avgTime = round(endTime / numOfPcbs, 4)
 
-            contextSwitchTime = processingTime+10
-            for p in currStatus["processes"].values():
-                p = p[0]
-                if pid != p.getPid() and processType!="os":
-                    p.addWt(contextSwitchTime)
-            cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Updated the Waiting Term in other processes by {contextSwitchTime}.\n")
+        cpuLogfile.write(
+            f"Total number of processes in ready queue -> {lonnieOS.readyQ.size()}.\n"
+        )
+        cpuLogfile.write(
+            f"Total number of processes in blocked queue -> {lonnieOS.blockedQ.size()}.\n"
+        )
+        cpuLogfile.write(
+            f"Total number of processes in the system -> {lonnieOS.processes.size()}.\n"
+        )
+        cpuLogfile.write(
+            f"Number of Pcbs: {numOfPcbs}. Time taken {endTime} seconds. Avg time: {avgTime}s\n"
+        )
 
-            for t in range(0, processingTime, 10):
-                r = random.randint(0, 10)
-                cpuLogfile.write(f"{spaces*(numOfSpaces+2)}- Generated random number between 0 and 10 for ten time cycle- {r}.\n")
-                if r == 4:
-                    currStatus["ioQ"].append(["u", t])
-                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Added a user input I/O event to the event queue with a timecycle stamp of {t}.\n")
-                elif r == 9:
-                    currStatus["ioQ"].append(["h", t])
-                    cpuLogfile.write(f"{spaces*(numOfSpaces+3)}- Added a hard drive I/O event to the event queue with a timecycle stamp of {t}.\n")
+    # displayMsg(cpuLog)
+    printSuccessMsg(
+        f"""
+        CPU simulation complete.\n
+        Number of Pcbs: {numOfPcbs}. Time taken {endTime} s. Avg time: {avgTime}s\n
+        View 'cpu-log.txt' for more details.
+        """
+    )
 
-            decision = random.randint(0, 3) if processType!="os" else 1
-            cpuLogfile.write(f"{spaces*(numOfSpaces+1)}- Generated random number between 0 and 3 to determine what happens with the process - {decision}.\n")
 
-            if decision == 0:
-                deletePCB(f"--id={pid}")
-                cpuLogfile.write(f"{spaces*(numOfSpaces+2)}- Process got terminated and removed from the system.\n")
-            else:
-                currStatus["readyQ"].pop(0)
-                if decision == 1:
-                    currStatus["readyQ"].append(pid)
-                    cpuLogfile.write(f"{spaces*(numOfSpaces+2)}- Process returned to the ready queue to wait its turn.\n")
-                elif decision == 2:
-                    process.setBt(processingTime)
-                    currStatus["blockedQ"].append([pid, "u",processingTime])
-                    currStatus["processes"][pid] = [process, "blockedQ"]
-                    cpuLogfile.write(f"{spaces*(numOfSpaces+2)}- Process required an I/O event and went into the blocked queue wanting an user I/O request.\n")
-                elif decision == 3:
-                    process.setBt(processingTime)
-                    currStatus["blockedQ"].append([pid, "h",processingTime])
-                    currStatus["processes"][pid] = [process, "blockedQ"]
-                    cpuLogfile.write(f"{spaces*(numOfSpaces+2)}- Process required an I/O event and went into the blocked queue wanting a hard drive I/O request.\n")
-
-            updateBlockedQ()
-            currStatus["cpu"].pop(0)
-            end = len(currStatus["readyQ"])
-        end_time = time.time()-start_time
-        cpuLogfile.write(f"{spaces*numOfSpaces}CPU SIMULATION FINISHED.\n")
-        cpuLogfile.write(f"{spaces*numOfSpaces}Total Number of processes in ready queue - {len(currStatus['readyQ'])}.\n")
-        cpuLogfile.write(f"{spaces*numOfSpaces}Total Number of processes in blocked queue - {len(currStatus['blockedQ'])}.\n")
-        cpuLogfile.write(f"{spaces*numOfSpaces}Total Number of processes in the system - {len(currStatus['processes'])}.\n")
-        cpuLogfile.write(f"{spaces*numOfSpaces}Total time taken for CPU simulation - {end_time} seconds.\n")
-        print(f"--- cpu simulation execution time : {end_time} seconds ---")        
-
-def handleCmds(input: str):
-    time = datetime.now().strftime("%I:%M:%S %p")
-    if len(currStatus["cmdHistory"]) >= 10:
-        currStatus["cmdHistory"].pop(0)
-    currStatus["cmdHistory"].append({"time": time, "cmd": input})
-
-    cmd = input.split(" ")[0].strip()
-
-    if len(cmd) < 1:
-        return
-    elif "--help" in input:
-        if allCmds.get(cmd):
-            print(f"\n{allCmds[cmd]['help']}\n")
-        else:
-            showHelp()
-    elif cmd in allCmds:
-        if allCmds[cmd]["func"]["hasParams"]:
-            allCmds[cmd]["func"]["name"](input)
-        else:
-            allCmds[cmd]["func"]["name"]()
-    else:
-        print(f"\n+++ no such command: {cmd}\n")
+# * --------- ALL SHELL COMMANDS MAPPED TO THEIR DESCRIPTION & FUNCTION --------------
 
 allCmds = {
     "alias": {
@@ -551,7 +474,7 @@ allCmds = {
     },
     "new-pcb": {
         "description": "create a new Process Control Block.",
-        "help": f"create a new Process Control Block.\nUsage : [COMMAND] [--id]=[integer] [--memory]=[integer] [--type]=[{' | '.join(pcbTypes)}] \nRequired arguments --id (unique PCB id) , and --memory (PCB memory allocation).",
+        "help": f"create a new Process Control Block.\nUsage : [COMMAND] [--id]=[integer] [--memory]=[integer] [--type]=[{' | '.join(lonnieOS.getPcbTypes())}] \nRequired arguments --id (unique PCB id) , and --memory (PCB memory allocation).",
         "func": {"hasParams": True, "name": newPCB},
     },
     "generate-pcbs": {
@@ -564,9 +487,9 @@ allCmds = {
         "help": "display PCBs in the ready queue.\nUsage : [COMMAND] | this command doesn't take any other arguments.",
         "func": {"hasParams": False, "name": readyPCBs},
     },
-    "run-cpu": {
+    "cpu": {
         "description": "run a cpu process simulation.",
-        "help": f"run a cpu process simulation.\nUsage : [COMMAND]  [--method]=[{' | '.join(cpuExecMethods)}]  --quantum=[integer] --queues=[integer].\nRequired argument --method (scheduling algorithm for cpu simulation).\nOptional arguments --quantum (how many time cycles the process stays in the CPU before being kicked out) and --queues (number of queues for Multilevel Feedback Queue simulation.)",
+        "help": f"run a cpu process simulation.\nUsage : [COMMAND]  [--method]=[{' | '.join(lonnieOS.getSchedulingPolicies())}]  --quantum=[integer] --queues=[integer].\nRequired argument --method (scheduling algorithm for cpu simulation).\nOptional arguments --quantum (how many time cycles the process stays in the CPU before being kicked out) and --queues (number of queues for Multilevel Feedback Queue simulation.)",
         "func": {"hasParams": True, "name": execute},
     },
     "script": {

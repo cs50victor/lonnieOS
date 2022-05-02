@@ -1,0 +1,32 @@
+alias version=which
+all-pcbs
+blocked-q
+emoji 🤯
+generate-pcbs --num=5
+ls
+ready-q
+showdate
+which
+history
+
+
+
+1. alias            - allow the user to map different command names.
+2. all-pcbs         - display information for all PCBs in all queues, in order of PID.
+3. block-pcb        - place a Process Control Block in the blocked queue.
+4. blocked-q        - display PCBs in the blocked queue.
+5. clear            - clear the shell.
+6. delete-pcb       - delete a Process Control Block from its queue and free its memory.
+7. emoji            - allow the user to change shell emoji.
+8. exit             - exit the shell.
+9. generate-pcbs    - generate a number of PCBs.
+10. help            - display all current commands, and other help information.
+11. history         - display a history of the last ten commands a user used.
+12. ls              - display a list of all the files in the current directory.
+13. new-pcb         - create a new Process Control Block.
+14. ready-q         - display PCBs in the ready queue.
+15. run-cpu         - run a cpu process simulation.
+16. script          - run commands from a batch file or script.
+17. setdate         - allow the user to change the date.
+18. show-pcb        - display information about a Process Control Block.
+20. unblock-pcb     - place a Process Control Block in the ready queue.

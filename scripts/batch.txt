@@ -1,4 +1,4 @@
-emoji 💩
+emoji 🎸
 new-pcb --id=0 --memory=200
 new-pcb --id=1 --memory=2
 new-pcb --id=2 --memory=3
@@ -12,7 +12,7 @@ block-pcb --id=1
 unblock-pcb --id=1
 unblock-pcb --id=6
 show-pcb --id=2
-generate-pcbs --num=100
+generate-pcbs --num=300
 new-pcb --id=0 --memory=20
 run-cpu
 blocked-q

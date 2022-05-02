@@ -1,0 +1,3 @@
+generate-pcbs --num=1000
+cpu --scheduler=all --quantum=1000 --queues=100
+
