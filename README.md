@@ -1,6 +1,6 @@
 # LonnieOS
 
-[thumbnail](thumbnail.png)
+![thumbnail](thumbnail.png)
 
 ## Run Operating System Simulator
 
