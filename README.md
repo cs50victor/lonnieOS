@@ -1,4 +1,8 @@
-# Start Operating System
+# LonnieOS
+
+[thumbnail](thumbnail.png)
+
+## Run Operating System Simulator
 
 ```shell
 python shell.py
