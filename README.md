@@ -52,4 +52,5 @@ ioq.py
 
 main.py - > finish execute
 ```
-<!-- https://otcatchup.util.repl.co/ -->
+
+[manual](Lonnie Operating System Manual.pdf)
