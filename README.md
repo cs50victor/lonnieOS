@@ -53,4 +53,4 @@ ioq.py
 main.py - > finish execute
 ```
 
-[manual](Lonnie Operating System Manual.pdf)
+[manual](Lonnie%20Operating%20System%20Manual.pdf)
