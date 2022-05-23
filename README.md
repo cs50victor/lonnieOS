@@ -34,23 +34,5 @@ shellConfig.py     classes/
             --------> shell.py
 ```
 
-## Class structures
-
-## Comments, Hinting and Test
-
-```txt
-
-pcb.py -> osPcb.py
-       -> mixedPcb.py
-       -> interactivePcb.py
-       -> cpuBoundPcb.py
-
-blockedQ.py  
-processes.py 
-os.py        
-ioq.py 
-
-main.py - > finish execute
-```
 
 [manual](Lonnie%20Operating%20System%20Manual.pdf)
