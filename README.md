@@ -10,14 +10,14 @@ python shell.py
 
 ## Project File Structure
 
-- classes/
-- tests/      (unit testing framework being used - 'unittest')
-- memory.json (operating system memory overwrite)
-- shell.py
-- shellConfig.py
-- main.py
+- classes/       (all custom classes. PCBS, PROCESS etc)
+- tests/         (unit testing framework being used - 'unittest')
+- memory.json    (manual operating system memory overwrite)
+- shell.py       (main file)
+- shellConfig.py (shell configuration and helper functions)
+- main.py        (all user-accessible functions)
 
-### How the project is structured
+### File structure 
 
 ```txt
 
@@ -26,7 +26,7 @@ shellConfig.py     classes/
     |-------|-------|   |
             |          os.py
             |           |
-          tests     shellConfig.py
+          tests/   shellConfig.py
             |           |
             |         main.py
             |           |
