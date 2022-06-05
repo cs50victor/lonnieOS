@@ -135,7 +135,7 @@ def underlineMsg(msg: str) -> str:
 def printErrorMsg(msg: str) -> None:
     # prints an error message to the shell
 
-    print(f"\n{errorEmoji} {msg}\n{commandHelp}\n")
+    print(f"\n{errorEmoji} {msg}\n")
 
 
 def printSuccessMsg(msg: str) -> None:

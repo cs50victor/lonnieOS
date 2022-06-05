@@ -6,6 +6,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 cpu-log.txt
+
 # C extensions
 *.so
 

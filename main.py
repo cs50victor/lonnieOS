@@ -489,7 +489,7 @@ allCmds = {
     },
     "cpu": {
         "description": "run a cpu process simulation.",
-        "help": f"run a cpu process simulation.\nUsage : [COMMAND]  [--method]=[{' | '.join(lonnieOS.getSchedulingPolicies())}]  --quantum=[integer] --queues=[integer].\nRequired argument --method (scheduling algorithm for cpu simulation).\nOptional arguments --quantum (how many time cycles the process stays in the CPU before being kicked out) and --queues (number of queues for Multilevel Feedback Queue simulation.)",
+        "help": f"run a cpu process simulation.\nUsage : [COMMAND]  [--scheduler]=[{' | '.join(lonnieOS.getSchedulingPolicies())}]  --quantum=[integer] --queues=[integer].\nRequired argument --scheduler (scheduling algorithm for cpu simulation).\nOptional arguments --quantum (how many time cycles the process stays in the CPU before being kicked out) and --queues (number of queues for Multilevel Feedback Queue simulation.)",
         "func": {"hasParams": True, "name": execute},
     },
     "script": {
