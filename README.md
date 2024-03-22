@@ -35,4 +35,4 @@ shellConfig.py     classes/
 ```
 
 
-[manual](Lonnie%20Operating%20System%20Manual.pdf)
+[user manual pdf](Lonnie%20Operating%20System%20Manual.pdf)
